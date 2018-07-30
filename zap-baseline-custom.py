@@ -94,6 +94,7 @@ def usage():
     print ('    -i                default rules not in the config file to INFO')
     print ('    -j                use the Ajax spider in addition to the traditional one')
     print ('    -l level          minimum level to show: PASS, IGNORE, INFO, WARN or FAIL, use with -s to hide example URLs')
+    print ('    -n context_file   context file which will be loaded prior to spidering the target')
     print ('    -s                short output format - dont show PASSes or example URLs')
     print ('    -z zap_options    ZAP command line options e.g. -z "-config aaa=bbb -config ccc=ddd"')
     print ('    --active_scan     after passive scan, perform active scan')
@@ -157,6 +158,7 @@ def print_rule(action, alert_list, detailed_output, user_msg):
 def main(argv):
 
   global min_level
+  context_file = ''
   config_file = ''
   config_url = ''
   generate = ''
@@ -193,7 +195,7 @@ def main(argv):
   ignore_count = 0
 
   try:
-    opts, args = getopt.getopt(argv,"t:c:u:g:m:r:w:x:l:daijsz:", ['auth_display', 'auth_loginurl=', 'auth_username=', 'auth_auto', 'auth_password=', 'auth_usernamefield=', 'auth_passwordfield=', 'auth_firstsubmitfield=', 'auth_submitfield=', 'auth_exclude=', 'active_scan'])
+    opts, args = getopt.getopt(argv,"t:c:u:g:m:n:r:w:x:l:daijsz:", ['auth_display', 'auth_loginurl=', 'auth_username=', 'auth_auto', 'auth_password=', 'auth_usernamefield=', 'auth_passwordfield=', 'auth_firstsubmitfield=', 'auth_submitfield=', 'auth_exclude=', 'active_scan'])
   except getopt.GetoptError, exc:
     logging.warning ('Invalid option ' + exc.opt + ' : ' + exc.msg)
     usage()
@@ -213,6 +215,8 @@ def main(argv):
       logging.getLogger().setLevel(logging.DEBUG)
     elif opt == '-m':
       mins = int(arg)
+    elif opt == '-n':
+      context_file = arg
     elif opt == '-r':
       report_html = arg
     elif opt == '-w':
@@ -397,8 +401,18 @@ def main(argv):
     if auth_loginUrl:
         logging.debug ('Setup a new context')
 
+        contextId = ''
+        # import context
+        if context_file:
+            contextId = zap.context.import_context('/zap/wrk/' + os.path.basename(context_file))
+            if contextId.startswith("ZAP Error"):
+                logging.error('Failed to load context file ' + context_file + ' : ' + contextId)
+            print('imported context ', contextId)
+
+        # TODO this won't actually be contextId, however it works for testing
         # create a new context
-        contextId = zap.context.new_context('auth')
+        if not contextId:
+            contextId = zap.context.new_context('auth')
 
         # include everything below the target
         zap.context.include_in_context('auth', "\\Q" + target + "\\E.*")
