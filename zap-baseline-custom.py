@@ -437,10 +437,7 @@ def main(argv):
             "httpProxy":PROXY,
             "ftpProxy":PROXY,
             "sslProxy":PROXY,
-            "noProxy":None,
-            "proxyType":"MANUAL",
-            "class":"org.openqa.selenium.Proxy",
-            "autodetect":False
+            "proxyType":"MANUAL"
         }
 
         profile = webdriver.FirefoxProfile()
@@ -523,7 +520,7 @@ def main(argv):
                 find_element(auth_submit_field_name, "//input[@type='submit']").click()
 
         # Wait for all requests to finish - not needed?
-        time.sleep(30)
+        time.sleep(3)
 
         logging.debug ('Create an authenticated session')
 
@@ -573,13 +570,17 @@ def main(argv):
       # Ajax Spider the target as well
       logging.debug ('AjaxSpider ' + target)
       zap.ajaxSpider.set_option_max_duration(str(mins))
-      zap.ajaxSpider.scan(target)
+      print(zap.ajaxSpider.status)
+      zap.ajaxSpider.scan(url=target, contextname='auth')
+      print(zap.ajaxSpider.status)
       time.sleep(5)
 
+      print(zap.ajaxSpider.status)
       while (zap.ajaxSpider.status == 'running'):
-        logging.debug ('Ajax Spider running, found urls: ' + zap.ajaxSpider.number_of_results)
+        logging.debug ('Ajax Spider running, found urls: ',  zap.ajaxSpider.number_of_results)
         time.sleep(5)
       logging.debug ('Ajax Spider complete')
+      print(zap.ajaxSpider.status)
 
     # Wait for passive scanning to complete
     rtc = zap.pscan.records_to_scan
